@@ -7,12 +7,12 @@
 import socket
  
 s = socket.socket()
-s.connect(('192.168.220.129',9999))  #连接服务端
-while True:#
-	data = input('data:')
-	s.send(data.encode())#发送数据
+s.connect(('127.0.0.1',9999))
+while True:
+	data = input('send out data:')
+	s.send(data.encode())
 	recv = s.recv(1024).decode()
-	print(recv)
+	print('get',recv)
 	if data=='close':
 		break
 s.close()
