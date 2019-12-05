@@ -3,7 +3,7 @@
  
 import socket
 sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM) #tcp/ip scoket
-sock.bind(('127.0.0.1',9999)) 
+sock.bind(('0.0.0.0',9999)) 
 sock.listen(128)
 while True:
 	print('wait client')
