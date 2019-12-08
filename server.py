@@ -4,6 +4,7 @@
 import socket
 from tcppy import server
 
+"""Parameter configuration"""
 HOST = '0.0.0.0'
 PORT = 9999
 BUFFER_SIZE = 1024
@@ -14,7 +15,6 @@ if __name__ == "__main__":
 	sock = server(HOST,PORT,MAX_LISTEN,BUFFER_SIZE)
 	while True:
 		sock.connect_client()
-		#Identity_verification(client)
 		while True:
 			data = sock.receive()
 			print('client'+sock.client_addr[0]+':', data)
@@ -32,4 +32,5 @@ if __name__ == "__main__":
 					sock.close()
 				else:
 					sock.send(msg)
+		
 	sock.server_close()
