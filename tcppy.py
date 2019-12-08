@@ -11,7 +11,7 @@ class link():
         print('wait')
         return self.session.recv(self.BUFFER_SIZE).decode()
     def close(self):
-        self.session.send('bye')
+        self.send('bye')
         print("session closed")
 
 
@@ -51,7 +51,7 @@ class server(link):
     def file_send(self,data):
         filename = data.split()[1]
         if filename in os.listdir('./static/'):
-            filesize = str(os.path.getsize(filename))
+            filesize = str(os.path.getsize('./static/'+filename))
             print("file's size：",filesize,filename)
             filemessage = '--sendfile '+filesize+' '+filename
             self.session.send(filemessage.encode())
