@@ -11,7 +11,7 @@ BUFFER_SIZE = 1024
 MAX_LISTEN = 10
 
 
-if __name__ == "__main__":
+def server_start():
 	sock = server(HOST,PORT,MAX_LISTEN,BUFFER_SIZE)
 	while True:
 		sock.connect_client()
@@ -34,3 +34,7 @@ if __name__ == "__main__":
 					sock.send(msg)
 		
 	sock.server_close()
+
+
+if __name__ == "__main__":
+	server_start()		

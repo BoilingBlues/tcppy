@@ -3,6 +3,7 @@ import socket
 import os
 from Crypto.Cipher import AES
 from Crypto.Random import random
+from rsaPy import rsaPy
 
 
 class link():
@@ -44,7 +45,10 @@ class client(link):
         self.session = socket.socket()
         self.session.connect((server_ip,port))
         self.BUFFER_SIZE = BUFFER_SIZE
-        self.identity_verification()
+        try:
+            self.identity_verification()
+        except:
+            print("identity verification error,your lan is don't safe")
         print("connected server,input --getfile filename to download file")
 
     def file_received(self,recv):
@@ -76,15 +80,23 @@ class client(link):
         self.aes = AES.new(key.encode(), AES.MODE_CBC, iv.encode())
         self.aes1 = AES.new(key.encode(), AES.MODE_CBC, iv.encode())
         message = "key:" + key + ";iv:" + iv
-        self.session.send(message.encode())
-        ok_key = self.receive()
-        if ok_key != "ok":
-            print("identity verification error")
+        self.rsa_consult(message)
+        try:
+            ok_key = self.receive()
+        except:
+            print("identity verification error,your lan is don't safe")
+        if ok_key != iv:
+            print("identity verification error,server is not safe")
             self.close()
-    
+
+    def rsa_consult(self,message):
+        publickey = self.session.recv(self.BUFFER_SIZE)
+        rsa_py = rsaPy()
+        en_privatekey = rsa_py.encrypt(message.encode(),publickey)
+        self.session.send(en_privatekey)
 
 class server(link):
-        """the class for server"""
+    """the class for server"""
     def __init__(self,host,port,max_listen,buffer_size):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind((host,port))
@@ -122,13 +134,22 @@ class server(link):
     
     def wait_identity_verification(self):
         """"Complete authentication with client"""
-        message = self.session.recv(self.BUFFER_SIZE).decode()
+        message = self.rsa_consult().decode()
         key = message[4:20].encode()
         iv = message[24:].encode()
         self.aes = AES.new(key,AES.MODE_CBC,iv)
         self.aes1 = AES.new(key,AES.MODE_CBC,iv)
-        self.send('ok')
+        self.send(iv.decode())
     
+    def rsa_consult(self):
+        """"send the public key to client,and get the aes/cbc private key"""
+        rsa_py = rsaPy()
+        self.session.send(rsa_py.pubkey)
+        en_privatekey = self.session.recv(self.BUFFER_SIZE)
+        privatekey = rsa_py.decrypt(en_privatekey)
+        return privatekey
+
+        
 
 
 

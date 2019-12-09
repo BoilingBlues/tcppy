@@ -8,8 +8,7 @@ PORT = 9999
 BUFFER_SIZE = 1024
 
 
-
-if __name__ == "__main__":
+def client_start():
 	sock = client(PORT,BUFFER_SIZE)
 	while True:
 		data = input('me:')
@@ -27,3 +26,6 @@ if __name__ == "__main__":
 				break
 			print('server: ',recv)	
 	sock.close()
+
+if __name__=='__main__':
+	client_start()
