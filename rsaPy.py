@@ -10,7 +10,7 @@ class rsaPy():
         self.prikey = prikey
 
     def encrypt(self,text,publickey):
-        """Use public key encryption""""
+        """Use public key encryption"""
         publickey = rsa.PublicKey.load_pkcs1(publickey)
         ciphertext = rsa.encrypt(text, publickey)
         return ciphertext
