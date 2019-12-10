@@ -22,7 +22,7 @@ class link():
     def receive(self):
         """receive message for client and server"""
         print('wait')
-        message = self.session.recv(self.BUFFER_SIZE).strip()
+        message = self.session.recv(self.BUFFER_SIZE)
         message = self.aes1.decrypt(message).decode()
         if(len(message) % 16 != 0):
             raise Exception("Error: length of the message should be multiple of 16!")
@@ -48,17 +48,18 @@ class client(link):
         try:
             self.identity_verification()
         except:
-            print("identity verification error,your lan is don't safe")
+            print("identity verification error,lan is not safe")
+            self.close()
         print("connected server,input --getfile filename to download file")
 
     def file_received(self,recv):
         """receive file from server"""
-        self.session.send("File size received".encode())
+        self.send("File size received")
         file_total_size = int(recv.split()[1])
         received_size = 0
-        f = open("new" + recv.split()[2] ,"wb")
+        f = open("new" + recv.split()[2] ,"w")
         while received_size < file_total_size:
-            data = self.session.recv(self.BUFFER_SIZE)
+            data = self.receive()
             f.write(data)
             received_size += len(data)
             print("get:",received_size)
@@ -81,13 +82,16 @@ class client(link):
         self.aes1 = AES.new(key.encode(), AES.MODE_CBC, iv.encode())
         message = "key:" + key + ";iv:" + iv
         self.rsa_consult(message)
-        try:
-            ok_key = self.receive()
-        except:
-            print("identity verification error,your lan is don't safe")
+        ok_key = self.receive()
         if ok_key != iv:
             print("identity verification error,server is not safe")
             self.close()
+        self.passwd_confirm()
+
+    def passwd_confirm(self):
+        passwd = input("Enter password:")
+        self.send(passwd)
+
 
     def rsa_consult(self,message):
         publickey = self.session.recv(self.BUFFER_SIZE)
@@ -107,7 +111,11 @@ class server(link):
         """wait to connect client"""
         print('wait client')
         self.session,self.client_addr = self.sock.accept()
-        self.wait_identity_verification()
+        try:
+            self.wait_identity_verification()
+        except:
+            print("identity verification error,lan is not safe")
+            self.close()
         print('get client',self.client_addr)
 
     def file_send(self,data):
@@ -117,16 +125,16 @@ class server(link):
             filesize = str(os.path.getsize('./static/'+filename))
             print("file's size：",filesize,filename)
             filemessage = '--sendfile '+filesize+' '+filename
-            self.session.send(filemessage.encode())
-            data = self.session.recv(self.BUFFER_SIZE)  
+            self.send(filemessage)
+            data = self.receive()  
             print("send begin..")
-            f = open('./static/'+filename, "rb")
+            f = open('./static/'+filename, "r")
             for line in f:
-                self.session.send(line)
+                self.send(line)
             f.close()
             print("send finished")
         else:
-            self.session.send("0001".encode())   
+            self.send("0001")   
 
     def server_close(self):
         """close the whole server"""
@@ -140,6 +148,10 @@ class server(link):
         self.aes = AES.new(key,AES.MODE_CBC,iv)
         self.aes1 = AES.new(key,AES.MODE_CBC,iv)
         self.send(iv.decode())
+        a = self.passwd_confirm()
+        if not a:
+            print("identity verification error,lan is not safe")
+            self.close()
     
     def rsa_consult(self):
         """"send the public key to client,and get the aes/cbc private key"""
@@ -148,6 +160,14 @@ class server(link):
         en_privatekey = self.session.recv(self.BUFFER_SIZE)
         privatekey = rsa_py.decrypt(en_privatekey)
         return privatekey
+
+    def passwd_confirm(self):
+        passwd = self.receive()
+        f = open('user','r')
+        for line in f:
+            if line == passwd:
+                return True
+        return False
 
         
 
